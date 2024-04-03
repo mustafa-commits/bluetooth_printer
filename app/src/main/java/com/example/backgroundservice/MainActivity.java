@@ -2,12 +2,14 @@ package com.example.backgroundservice;
 
 import static com.example.backgroundservice.PrintPic.mergeBitmapsVertically;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -18,7 +20,11 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -37,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     Button printbtn;
 
     EditText editText;
+    ActivityResultLauncher<String> activityResultLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +56,23 @@ public class MainActivity extends AppCompatActivity {
         printbtn = findViewById(R.id.printButton);
         editText = findViewById(R.id.textField);
         showDevicesButton.setOnClickListener(v -> showDevices());
+
+        activityResultLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback<Boolean>() {
+            @Override
+            public void onActivityResult(Boolean result) {
+                if (result != null && result) {
+                    Toast.makeText(getApplicationContext(), "Permission granted", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), "Permission denied", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(getApplicationContext(), "Permission already granted", Toast.LENGTH_SHORT).show();
+        } else {
+            activityResultLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT);
+        }
 
         // Register BroadcastReceiver for Bluetooth state changes
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
